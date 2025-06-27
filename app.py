@@ -1,11 +1,6 @@
 import streamlit as st
-import requests
-import os
-from dotenv import load_dotenv
 
-# Load API Key from .env
-load_dotenv()
-API_KEY = os.getenv("HUGGINGFACE_API_KEY")
+API_KEY = st.secrets["HUGGINGFACE_API_KEY"]
 
 # Your Hugging Face model name or endpoint
 MODEL_NAME = "meta-llama/Llama-2-7b-chat-hf"  # Replace if using your own hosted model
@@ -60,4 +55,4 @@ if st.button("🚀 Get Response"):
 
 # Footer
 st.markdown("---")
-st.caption("Built with ❤️ by Aditya | Meta LLaMA on Hugging Face + Streamlit UI")
+st.caption("Built with by Aditya | Meta LLaMA on Hugging Face + Streamlit UI")
