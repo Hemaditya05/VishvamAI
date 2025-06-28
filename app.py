@@ -1,54 +1,52 @@
 import streamlit as st
 import requests
-import json
 
-# Setup page
-st.set_page_config(page_title="Cybersecurity Helper Bot", page_icon="🛡️")
-st.title("🛡️ Cybersecurity Helper Bot")
+st.set_page_config(page_title="CyberSec Helper", page_icon="🛡️")
+st.title("🛡️ CyberSec Helper")
 st.markdown("Ask cybersecurity questions — powered by Hugging Face.")
 
-# Load API key from Streamlit Secrets
 API_KEY = st.secrets["HUGGINGFACE_API_KEY"]
 st.write("🔐 API Key loaded:", API_KEY is not None)
 
-# Choose a model
-MODEL_NAME = "mistralai/Mistral-Small-3.1-24B-Instruct-2503"
-API_URL = f"https://api-inference.huggingface.co/models/{MODEL_NAME}"
+# the model you chose
+MODEL_NAME = "meta-llama/Llama-3.3-70B-Instruct"
+
+# 👇 the Chat Completions endpoint (note the /v1/ prefix)
+API_URL = "https://api-inference.huggingface.co/v1/chat/completions"
 
 headers = {
     "Authorization": f"Bearer {API_KEY}",
     "Content-Type": "application/json"
 }
 
-# User input
-user_input = st.text_area("💬 Enter your query here:")
+user_input = st.text_area("💬 Enter your question:")
 
 if st.button("🚀 Get Response"):
     if not user_input.strip():
         st.warning("Please type a question.")
     else:
-        with st.spinner("Getting response..."):
-            try:
-                payload = {
-                    "inputs": user_input,
-                    "options": {"wait_for_model": True}
-                }
-                response = requests.post(API_URL, headers=headers, data=json.dumps(payload))
-                result = response.json()
-                st.write("📦 raw result:", result)
+        with st.spinner("Talking to the model…"):
+            # build the OpenAI‐style messages payload
+            payload = {
+                "model": MODEL_NAME,
+                "messages": [
+                    {"role": "system", "content": "You are an expert cybersecurity assistant."},
+                    {"role": "user",   "content": user_input}
+                ]
+            }
 
+            resp = requests.post(API_URL, headers=headers, json=payload)
+            st.write("🔎 HTTP status:", resp.status_code)
+            data = resp.json()
+            st.write("📦 raw result:", data)
 
-                # Check for output structure
-                if isinstance(result, list) and "generated_text" in result[0]:
-                    st.success(result[0]["generated_text"])
-                elif "generated_text" in result:
-                    st.success(result["generated_text"])
-                elif "error" in result:
-                    st.error(f"Hugging Face Error: {result['error']}")
-                else:
-                    st.warning("⚠️ Unexpected response format.")
-            except Exception as e:
-                st.error(f"API Request Failed: {str(e)}")
-
-st.markdown("---")
-st.caption("Built by Aditya | Streamlit + Hugging Face")
+            # parse out the assistant’s reply
+            if resp.status_code == 200 and "choices" in data:
+                reply = data["choices"][0]["message"]["content"]
+                st.success(reply)
+            elif resp.status_code == 401:
+                st.error("❌ Unauthorized — check your token scopes.")
+            elif resp.status_code == 404:
+                st.error("❌ Model not found — make sure `MODEL_NAME` is exactly right and inference is enabled.")
+            else:
+                st.warning("⚠️ Unexpected response format; see the raw output above.")
