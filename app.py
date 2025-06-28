@@ -36,6 +36,4 @@ if st.button("Get Response") and user_input:
         except Exception:
             st.error("Bad response format")
             st.write(resp.text)
-
-
-modify this
+ 
