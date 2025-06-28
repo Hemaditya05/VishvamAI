@@ -136,6 +136,6 @@ with st.container():
 # Footer
 st.markdown("<hr>", unsafe_allow_html=True)
 st.markdown(
-    "<p style='text-align: center; color: #888;'>Powered by xAI | CyberSec Helper v1.0</p>",
+    "<p style='text-align: center; color: #888;'> CyberSec Helper v1.0</p>",
     unsafe_allow_html=True
 )
