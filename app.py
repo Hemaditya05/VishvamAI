@@ -35,6 +35,8 @@ if st.button("🚀 Get Response"):
                 }
                 response = requests.post(API_URL, headers=headers, data=json.dumps(payload))
                 result = response.json()
+                st.write("📦 raw result:", result)
+
 
                 # Check for output structure
                 if isinstance(result, list) and "generated_text" in result[0]:
