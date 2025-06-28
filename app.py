@@ -1,39 +1,58 @@
-import os, streamlit as st, requests
+import os
+import streamlit as st
+import requests
 
-st.write("🔑 All secrets:", dict(st.secrets))  # see what keys Streamlit actually has
+st.set_page_config("CyberSec Helper", "🛡️")
+st.title("CyberSec Helper – Debug Mode")
 
-API_KEY = (
-    st.secrets.get("HUGGINGFACE_API_KEY")
-    or os.getenv("HUGGINGFACE_API_KEY")
-)
-st.write("✅ API key found:", bool(API_KEY))
+# 1. Show loaded secrets and environment
+st.write("🔑 st.secrets:", dict(st.secrets))
+st.write("🌐 ENV HUGGINGFACE_API_KEY:", os.getenv("HUGGINGFACE_API_KEY"))
+
+# 2. Load API key
+API_KEY = st.secrets.get("HUGGINGFACE_API_KEY") or os.getenv("HUGGINGFACE_API_KEY")
 if not API_KEY:
-    st.error("No API key! → add HUGGINGFACE_API_KEY in **Manage app → Settings → Secrets** or set the env-var and redeploy.")
+    st.error("Missing API key")
     st.stop()
 
-# … rest of your code …
+# 3. Ping a known public model to verify auth & endpoint
+ping = requests.get(
+    "https://api-inference.huggingface.co/models/gpt2",
+    headers={"Authorization": f"Bearer {API_KEY}"}
+)
+try:
+    st.write("Ping gpt2:", ping.status_code, ping.json())
+except:
+    st.write("Ping gpt2 invalid JSON:", ping.status_code, ping.text)
 
-
-user_input = st.text_area("Enter your question")
-if st.button("Get Response") and user_input:
+# 4. User input
+q = st.text_area("Enter your question")
+if not q:
+    st.info("Type something above")
+elif st.button("Debug & Get Response"):
     url = "https://api-inference.huggingface.co/v1/chat/completions"
     headers = {"Authorization": f"Bearer {API_KEY}"}
     payload = {
         "model": "meta-llama/Llama-3.3-70B-Instruct",
         "messages": [
             {"role": "system", "content": "You are an expert cybersecurity assistant."},
-            {"role": "user",   "content": user_input}
+            {"role": "user",   "content": q}
         ]
     }
 
     resp = requests.post(url, headers=headers, json=payload)
-    if not resp.ok:
-        st.error(f"{resp.status_code}: {resp.text}")
-    else:
-        try:
-            msg = resp.json()["choices"][0]["message"]["content"]
-            st.success(msg)
-        except Exception:
-            st.error("Bad response format")
-            st.write(resp.text)
- 
+    st.write("POST status:", resp.status_code)
+    try:
+        data = resp.json()
+        st.json(data)
+    except:
+        st.write("Invalid JSON response:", resp.text)
+        st.stop()
+
+    # parse
+    try:
+        answer = data["choices"][0]["message"]["content"]
+        st.success(answer)
+    except Exception as e:
+        st.error(f"Parse error: {e}")
+        st.write(data)
