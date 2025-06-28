@@ -1,13 +1,18 @@
-import streamlit as st
-import requests
+import os, streamlit as st
 
-st.set_page_config(page_title="CyberSec Helper", page_icon="🛡️")
-st.title("CyberSec Helper")
+st.write("🔑 All secrets:", dict(st.secrets))  # see what keys Streamlit actually has
 
-API_KEY = st.secrets["HUGGINGFACE_API_KEY"]
+API_KEY = (
+    st.secrets.get("HUGGINGFACE_API_KEY")
+    or os.getenv("HUGGINGFACE_API_KEY")
+)
+st.write("✅ API key found:", bool(API_KEY))
 if not API_KEY:
-    st.error("Missing API key")
+    st.error("No API key! → add HUGGINGFACE_API_KEY in **Manage app → Settings → Secrets** or set the env-var and redeploy.")
     st.stop()
+
+# … rest of your code …
+
 
 user_input = st.text_area("Enter your question")
 if st.button("Get Response") and user_input:
