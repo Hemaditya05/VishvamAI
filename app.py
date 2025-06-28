@@ -1,38 +1,41 @@
-import os
-import streamlit as st
-import requests
+import os, streamlit as st, requests
 
-st.set_page_config(page_title="CyberSec Helper", page_icon="🛡️")
-st.title("CyberSec Helper")
+st.write("🔑 All secrets:", dict(st.secrets))  # see what keys Streamlit actually has
 
-API_KEY = st.secrets.get("HUGGINGFACE_API_KEY") or os.getenv("HUGGINGFACE_API_KEY")
+API_KEY = (
+    st.secrets.get("HUGGINGFACE_API_KEY")
+    or os.getenv("HUGGINGFACE_API_KEY")
+)
+st.write("✅ API key found:", bool(API_KEY))
 if not API_KEY:
-    st.error("Missing API key. Add HUGGINGFACE_API_KEY in Secrets or as an env-var.")
+    st.error("No API key! → add HUGGINGFACE_API_KEY in **Manage app → Settings → Secrets** or set the env-var and redeploy.")
     st.stop()
 
-MODEL = "mistralai/Mistral-Small-3.1-24B-Instruct-2503"
-ENDPOINT = "https://api-inference.huggingface.co/v1/chat/completions"
+# … rest of your code …
 
-q = st.text_area("Enter your question")
-if st.button("Get Response") and q:
-    resp = requests.post(
-        ENDPOINT,
-        headers={"Authorization": f"Bearer {API_KEY}"},
-        json={
-            "model": MODEL,
-            "messages": [
-                {"role": "system", "content": "You are an expert cybersecurity assistant."},
-                {"role": "user",   "content": q}
-            ]
-        }
-    )
+
+user_input = st.text_area("Enter your question")
+if st.button("Get Response") and user_input:
+    url = "https://api-inference.huggingface.co/v1/chat/completions"
+    headers = {"Authorization": f"Bearer {API_KEY}"}
+    payload = {
+        "model": "meta-llama/Llama-3.3-70B-Instruct",
+        "messages": [
+            {"role": "system", "content": "You are an expert cybersecurity assistant."},
+            {"role": "user",   "content": user_input}
+        ]
+    }
+
+    resp = requests.post(url, headers=headers, json=payload)
     if not resp.ok:
         st.error(f"{resp.status_code}: {resp.text}")
     else:
-        data = resp.json()
         try:
-            answer = data["choices"][0]["message"]["content"]
-            st.success(answer)
+            msg = resp.json()["choices"][0]["message"]["content"]
+            st.success(msg)
         except Exception:
             st.error("Bad response format")
-            st.write(data)
+            st.write(resp.text)
+
+
+modify this
