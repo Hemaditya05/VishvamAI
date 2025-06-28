@@ -1,57 +1,61 @@
 import os
 import streamlit as st
-import requests
+from huggingface_hub import InferenceClient
+from requests.exceptions import RequestException
 
-# 1) UI boilerplate
-st.set_page_config(page_title="CyberSec Helper", page_icon="🛡️")
-st.title("CyberSec Helper – HF Assistant Integration")
+# ─────────────────────────────────────────────────────────────
+# 1) CONFIG
+# ─────────────────────────────────────────────────────────────
+st.set_page_config("CyberSec Helper", "🛡️")
+st.title("🚀 CyberSec Helper (InferenceClient)")
 
-# 2) Show what secrets we actually have
-st.write("🔑 st.secrets keys:", list(st.secrets.keys()))
-st.write("🌐 ENV HUGGINGFACE_API_KEY:", os.getenv("HUGGINGFACE_API_KEY"))
-
-# 3) Load API key safely
-API_KEY = st.secrets.get("HUGGINGFACE_API_KEY") or os.getenv("HUGGINGFACE_API_KEY")
-if not API_KEY:
-    st.error("❌ Missing Hugging Face token. Add HUGGINGFACE_API_KEY in Streamlit Secrets or as an env var.")
+# 1a) Load your HF token from Streamlit secrets or env
+HF_TOKEN = st.secrets.get("HUGGINGFACE_API_KEY") or os.getenv("HUGGINGFACE_API_KEY")
+if not HF_TOKEN:
+    st.error("Missing HF token. Set HUGGINGFACE_API_KEY in Secrets or ENV.")
     st.stop()
 
-# 4) Your assistant ID from the “Direct URL”
-ASSISTANT_ID = "685ee1a6eea0be4c99b8c12a"
+# 1b) Instantiate a client (it will pick Fireworks, Novita, or fallback)
+client = InferenceClient(api_key=HF_TOKEN)
 
-# 5) Input box
-question = st.text_area("Enter your cybersecurity question")
-if not question:
-    st.info("Type a question above")
-elif st.button("Ask Assistant"):
-    # 6) Send the request
-    url = "https://api-inference.huggingface.co/v1/chat/completions"
-    headers = {"Authorization": f"Bearer {API_KEY}"}
-    payload = {"assistant_id": ASSISTANT_ID, "inputs": question}
+# 1c) Your assistant’s model (or base model) ID
+MODEL_ID = "mistralai/Mistral-Small-3.1-24B-Instruct-2503"
 
-    try:
-        resp = requests.post(url, headers=headers, json=payload, timeout=30)
-    except Exception as e:
-        st.error(f"❌ Request error: {e}")
-    else:
-        st.write("📶 HTTP status:", resp.status_code)
-        text = resp.text
-
-        # 7) Parse JSON
+# ─────────────────────────────────────────────────────────────
+# 2) UI
+# ─────────────────────────────────────────────────────────────
+question = st.text_area("Enter your cybersecurity question:")
+if st.button("Ask Bot") and question.strip():
+    with st.spinner("Thinking…"):
         try:
-            data = resp.json()
-        except ValueError:
-            st.error("❌ Invalid JSON response")
-            st.write(text)
+            # ─────────────────────────────────────────────────────
+            # 3) Call the chat endpoint
+            # ─────────────────────────────────────────────────────
+            response = client.chat.completions.create(
+                model=MODEL_ID,
+                messages=[
+                    {
+                        "role": "system",
+                        "content": (
+                            "You are an expert cybersecurity architect, penetration tester, "
+                            "threat analyst, and project manager. Tailor your advice to my "
+                            "resources, skill level, time constraints, and research goals."
+                        )
+                    },
+                    {"role": "user", "content": question}
+                ]
+            )
+        except RequestException as e:
+            st.error(f"Network or auth error:\n{e}")
+        except Exception as e:
+            st.error(f"Unexpected error calling HF Inference API:\n{e}")
         else:
-            # 8) If OK, extract content
-            if resp.ok and "choices" in data:
-                try:
-                    answer = data["choices"][0]["message"]["content"]
-                    st.success(answer)
-                except Exception as e:
-                    st.error(f"❌ Parse error: {e}")
-                    st.write(data)
-            else:
-                st.error("❌ API returned an error")
-                st.write(data)
+            # ─────────────────────────────────────────────────────
+            # 4) Extract and show the assistant’s reply
+            # ─────────────────────────────────────────────────────
+            try:
+                reply = response.choices[0].message.content
+                st.markdown(f"**Assistant:**  {reply}")
+            except Exception:
+                st.error("Failed to parse response:")
+                st.json(response)
