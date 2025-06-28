@@ -1,5 +1,5 @@
 import os, streamlit as st
-
+import requests 
 st.write("🔑 All secrets:", dict(st.secrets))  # see what keys Streamlit actually has
 
 API_KEY = (
