@@ -26,7 +26,7 @@ if not prompt:
 elif st.button("🚀 Generate"):
     # Decide which endpoint & payload
     if "chat" in MODEL.lower():
-        url     = "https://api-inference.huggingface.co/v1/chat/completions"
+        url     = "https://api-inference.huggingface.co/v/chat/completions"
         payload = {"model": MODEL, "messages":[{"role":"user","content":prompt}]}
     else:
         url     = f"https://api-inference.huggingface.co/models/{MODEL}"
