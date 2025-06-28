@@ -2,6 +2,7 @@ import streamlit as st
 import requests
 
 API_KEY = st.secrets["HUGGINGFACE_API_KEY"]
+st.write("API KEY Present:", API_KEY is not None)
 MODEL_NAME = "tiiuae/falcon-7b-instruct"  # or your own model
 API_URL = f"https://api-inference.huggingface.co/models/{MODEL_NAME}"
 
