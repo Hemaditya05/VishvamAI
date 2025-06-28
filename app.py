@@ -7,31 +7,32 @@ st.title("CyberSec Helper")
 
 API_KEY = st.secrets.get("HUGGINGFACE_API_KEY") or os.getenv("HUGGINGFACE_API_KEY")
 if not API_KEY:
-    st.error("Missing API key. Set HUGGINGFACE_API_KEY in Secrets or env.")
+    st.error("Missing API key. Add HUGGINGFACE_API_KEY in Secrets or as an env-var.")
     st.stop()
 
-model = "mistralai/Mistral-Small-3.1-24B-Instruct-2503"
-endpoint = "https://api-inference.huggingface.co/v1/chat/completions"
+MODEL = "mistralai/Mistral-Small-3.1-24B-Instruct-2503"
+ENDPOINT = "https://api-inference.huggingface.co/v1/chat/completions"
 
 q = st.text_area("Enter your question")
 if st.button("Get Response") and q:
-    r = requests.post(
-        endpoint,
+    resp = requests.post(
+        ENDPOINT,
         headers={"Authorization": f"Bearer {API_KEY}"},
         json={
-            "model": model,
+            "model": MODEL,
             "messages": [
                 {"role": "system", "content": "You are an expert cybersecurity assistant."},
-                {"role": "user", "content": q}
+                {"role": "user",   "content": q}
             ]
         }
     )
-    if not r.ok:
-        st.error(f"{r.status_code}: {r.text}")
+    if not resp.ok:
+        st.error(f"{resp.status_code}: {resp.text}")
     else:
+        data = resp.json()
         try:
-            answer = r.json()["choices"][0]["message"]["content"]
+            answer = data["choices"][0]["message"]["content"]
             st.success(answer)
-        except:
+        except Exception:
             st.error("Bad response format")
-            st.write(r.text)
+            st.write(data)
