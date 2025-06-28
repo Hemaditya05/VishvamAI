@@ -24,7 +24,7 @@ h1 {
 
 /* Button gradient */
 .stButton>button {
-  background: linear-gradient(90deg, #32CD32, #FF4500);
+  background: linear-gradient(90deg, #32CD32);
   color: #fff;
   border: none;
   border-radius: 0.5rem;
