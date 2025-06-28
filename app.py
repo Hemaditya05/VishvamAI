@@ -11,7 +11,7 @@ if not API_KEY:
 
 user_input = st.text_area("Enter your question")
 if st.button("Get Response") and user_input:
-    url = "https://huggingface.co/chat"
+    url = "https://api-inference.huggingface.co/v1/chat/completions
     headers = {"Authorization": f"Bearer {API_KEY}"}
     payload = {
         "model": "meta-llama/Llama-3.3-70B-Instruct",
